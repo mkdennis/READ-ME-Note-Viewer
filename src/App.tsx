@@ -1,11 +1,11 @@
-import { useState } from 'react'
-import { FileUpload } from '@/components/FileUpload'
+import { useState, useEffect, useCallback } from 'react'
 import { ReadmeList } from '@/components/ReadmeList'
 import { ReadmeViewer } from '@/components/ReadmeViewer'
 import { TableOfContents } from '@/components/TableOfContents'
 import { SearchBar } from '@/components/SearchBar'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, BookOpen } from 'lucide-react'
+import { loadReadmesFromFolder } from '@/lib/loadReadmes'
 import type { Readme } from '@/lib/db'
 
 type ViewMode = 'list' | 'reader'
@@ -15,6 +15,18 @@ function App() {
   const [selectedReadme, setSelectedReadme] = useState<Readme | null>(null)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [searchResults, setSearchResults] = useState<Readme[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Load READMEs from folder on app initialization
+  useEffect(() => {
+    const initialize = async () => {
+      // Force reload to ensure we get the latest files
+      await loadReadmesFromFolder(true)
+      setIsLoading(false)
+      setRefreshTrigger(prev => prev + 1)
+    }
+    initialize()
+  }, [])
 
   const handleSelectReadme = (readme: Readme) => {
     setSelectedReadme(readme)
@@ -27,13 +39,9 @@ function App() {
     setSearchResults([])
   }
 
-  const handleUploadComplete = () => {
-    setRefreshTrigger(prev => prev + 1)
-  }
-
-  const handleSearchResults = (results: Readme[]) => {
+  const handleSearchResults = useCallback((results: Readme[]) => {
     setSearchResults(results)
-  }
+  }, [])
 
   return (
     <div className="min-h-screen bg-background">
@@ -47,15 +55,12 @@ function App() {
             </div>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
               {viewMode === 'list' && (
-                <>
-                  <div className="flex-1 sm:flex-initial">
-                    <SearchBar
-                      onSearchResults={handleSearchResults}
-                      onSelectReadme={handleSelectReadme}
-                    />
-                  </div>
-                  <FileUpload onUploadComplete={handleUploadComplete} />
-                </>
+                <div className="flex-1 sm:flex-initial w-full sm:w-auto">
+                  <SearchBar
+                    onSearchResults={handleSearchResults}
+                    onSelectReadme={handleSelectReadme}
+                  />
+                </div>
               )}
               {viewMode === 'reader' && (
                 <Button
@@ -74,7 +79,11 @@ function App() {
 
       {/* Main Content */}
       <main className="container mx-auto min-h-[calc(100vh-73px)]">
-        {viewMode === 'list' && (
+        {isLoading ? (
+          <div className="flex items-center justify-center p-12">
+            <p className="text-muted-foreground">Loading READMEs...</p>
+          </div>
+        ) : viewMode === 'list' && (
           <div>
             {searchResults.length > 0 ? (
               <div className="p-6">

@@ -1,4 +1,4 @@
-import { openDB, DBSchema, IDBPDatabase } from 'idb'
+import { openDB } from 'idb'
 
 export interface Readme {
   id: string
@@ -8,7 +8,7 @@ export interface Readme {
   lastModified: number
 }
 
-interface ReadmeDB extends DBSchema {
+interface ReadmeDB {
   readmes: {
     key: string
     value: Readme
@@ -20,9 +20,9 @@ const DB_NAME = 'readme-learning-db'
 const DB_VERSION = 1
 const STORE_NAME = 'readmes'
 
-let dbPromise: Promise<IDBPDatabase<ReadmeDB>> | null = null
+let dbPromise: ReturnType<typeof openDB<ReadmeDB>> | null = null
 
-function getDB(): Promise<IDBPDatabase<ReadmeDB>> {
+function getDB() {
   if (!dbPromise) {
     dbPromise = openDB<ReadmeDB>(DB_NAME, DB_VERSION, {
       upgrade(db) {
@@ -102,5 +102,13 @@ export async function searchReadmes(query: string): Promise<Readme[]> {
     const contentMatch = readme.content.toLowerCase().includes(lowerQuery)
     return titleMatch || contentMatch
   })
+}
+
+export async function clearAllReadmes(): Promise<void> {
+  const db = await getDB()
+  const tx = db.transaction(STORE_NAME, 'readwrite')
+  await tx.store.clear()
+  await tx.done
+  console.log('Cleared all READMEs from database')
 }
 

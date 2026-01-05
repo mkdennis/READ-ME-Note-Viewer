@@ -48,7 +48,8 @@ export function SearchBar({ onSearchResults, onSelectReadme }: SearchBarProps) {
         clearTimeout(debounceTimerRef.current)
       }
     }
-  }, [query, onSearchResults])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query]) // onSearchResults is stable via useCallback, but we exclude it to avoid issues
 
   const handleClear = () => {
     setQuery('')
