@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# shadcn/ui temporary files
+@
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
